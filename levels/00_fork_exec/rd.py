@@ -13,8 +13,6 @@
         - 同时 parent 等待它结束
 """
 
-
-
 import click
 import os
 import traceback
@@ -25,34 +23,34 @@ def cli():
     pass
 
 
-def contain(command):
-    # TODO: 执行 exec command，注意不同 exec 变体之间的区别
-    #       https://docs.python.org/2/library/os.html#os.execv
-    # 注意：command 是一个数组（第一个元素是 path/file，整个数组
-    #       都会作为 exec 的 args）
-
-    os._exit(0)  # TODO: 添加 exec 后删除这一行
+def contain(command: list[str]):
+    os.execvp(command[0], command)
 
 
-@cli.command(context_settings=dict(ignore_unknown_options=True,))
-@click.argument('Command', required=True, nargs=-1)
-def run(command):
-    # TODO: 用 fork() 替换这里
-    #       (https://docs.python.org/2/library/os.html#os.fork)
-    pid = 0
+@cli.command(
+    context_settings=dict(
+        ignore_unknown_options=True,
+    )
+)
+@click.argument("Command", required=True, nargs=-1)
+def run(command: list[str]):
+    if not command:
+        raise click.UsageError("You must specify a command")
+
+    pid = os.fork()
     if pid == 0:
         # 这里是 child，我们会尝试在这里做一些 containment
         try:
             contain(command)
-        except Exception:
+        except BaseException:  # noqa
             traceback.print_exc()
-            os._exit(1)  # contain() 中出了问题
+            os._exit(127)
 
     # 这里是 parent，pid 包含 fork 出来的 process 的 PID
     # 等待 fork 出来的 child，并获取 exit status
     _, status = os.waitpid(pid, 0)
-    print('{} exited with status {}'.format(pid, status))
+    print("{} exited with status {}".format(pid, status))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     cli()

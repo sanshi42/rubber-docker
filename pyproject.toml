@@ -32,6 +32,10 @@ Documentation = "hhttps://github.com/Fewbytes/rubber-docker"
 Repository = "https://github.com/Fewbytes/rubber-docker.git"
 "Bug Tracker" = "https://github.com/Fewbytes/rubber-docker/issues"
 
+[[tool.uv.index]]
+url = "https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple"
+default = true
+
 [tool.setuptools]
 packages = ["linux"]
-package-dir = {"linux" = "."} 
+package-dir = {"linux" = "."}
