@@ -10,28 +10,27 @@
 
 #define LINUX_MODULE_DOC "linux\n"\
                          "=====\n"\
-                         "The linux module is a simple Python c extension, containing syscall wrappers "\
-                         "missing from the Python os module. You will need to use these system calls "\
-                         "to implement different aspect of process containment during the workshop."
+                         "linux 模块是一个简单的 Python C extension，包含 Python os 模块缺失的 "\
+                         "syscall wrappers。你需要在工作坊中使用这些 system calls "\
+                         "实现 process containment 的不同方面。"
 
 #define PIVOT_ROOT_DOC  ".. py:function:: pivot_root(new_root, put_old)\n"\
                         "\n"\
-                        "change the root filesystem\n"\
+                        "修改 root filesystem\n"\
                         "\n"\
-                        ":param str new_root: New root file system\n"\
-                        ":param str put_old: Directory to move the current process root file system to\n"\
+                        ":param str new_root: 新的 root file system\n"\
+                        ":param str put_old: 用于移动当前 process root file system 的目录\n"\
                         ":return: None\n"\
-                        ":raises RuntimeError: if pivot_root fails\n"\
+                        ":raises RuntimeError: pivot_root 失败时抛出\n"\
                         "\n"\
-                        "**NOTE:** The following restrictions apply to `new_root` and `put_old`:\n"\
+                        "**注意：** 以下限制适用于 `new_root` 和 `put_old`：\n"\
                         "\n"\
-                        "* They must be directories.\n"\
-                        "* `new_root` and put_old must not be on the same filesystem as the current root.\n"\
-                        "* `new_root` must be a mountpoint.\n"\
-                        "* `put_old` must  be  underneath `new_root`, that is, adding a nonzero number\n"\
-                        "  of /.. to the string pointed to by `put_old` must yield the same directory as\n"\
-                        "  `new_root`.\n"\
-                        "* No other filesystem may be mounted on `put_old`.\n"
+                        "* 它们必须是目录。\n"\
+                        "* `new_root` 和 put_old 不能与当前 root 位于同一个 filesystem。\n"\
+                        "* `new_root` 必须是 mountpoint。\n"\
+                        "* `put_old` 必须位于 `new_root` 之下，也就是说，在 `put_old` 指向的字符串后\n"\
+                        "  添加非零数量的 /.. 后，必须能得到和 `new_root` 相同的目录。\n"\
+                        "* `put_old` 上不能 mount 其他 filesystem。\n"
 
 static PyObject *
 pivot_root(PyObject *self, PyObject *args) {
@@ -53,15 +52,15 @@ pivot_root(PyObject *self, PyObject *args) {
                     "\n"\
                     "mount filesystem\n"\
                     "\n"\
-                    ":param str source: filesystem to attach (can be ``None``)\n"\
-                    ":param str target: directory being attached to, or manipulated (in case of flag change)\n"\
-                    ":param str filesystemtype: filesystem supported by the kernel (can be ``None``)\n"\
-                    ":param int mountflags: any combination (using ``|``) of mount flags supported by mount(2).\n"\
-                    "                       For the workshop you are most likely to use ``0`` (i.e. no flags), \n"\
-                    "                       or a combination of: ``linux.MS_REC``, ``linux.MS_PRIVATE``\n"\
-                    ":param str mountopts: options passed to the specified filesystem (can be ``None``)\n"\
+                    ":param str source: 要挂接的 filesystem（可以是 ``None``）\n"\
+                    ":param str target: 要挂接到的目录，或要操作的目录（修改 flag 时）\n"\
+                    ":param str filesystemtype: kernel 支持的 filesystem（可以是 ``None``）\n"\
+                    ":param int mountflags: mount(2) 支持的 mount flags 的任意组合（使用 ``|``）。\n"\
+                    "                       在工作坊中，你最可能使用 ``0``（即无 flags），\n"\
+                    "                       或这些值的组合：``linux.MS_REC``、``linux.MS_PRIVATE``\n"\
+                    ":param str mountopts: 传给指定 filesystem 的 options（可以是 ``None``）\n"\
                     ":return: None\n"\
-                    ":raises RuntimeError: if mount fails\n"\
+                    ":raises RuntimeError: mount 失败时抛出\n"\
                     "\n"
 
 static PyObject *
@@ -86,9 +85,9 @@ _mount(PyObject *self, PyObject *args) {
                     "\n"\
                     "unmount filesystem\n"\
                     "\n"\
-                    ":param str target: the (topmost) filesystem this directory is mounted on will be removed\n"\
+                    ":param str target: 该目录所在的（最顶层）filesystem 会被移除\n"\
                     ":return: None\n"\
-                    ":raises RuntimeError: if umount fails\n"\
+                    ":raises RuntimeError: umount 失败时抛出\n"\
                     "\n"
 
 static PyObject *
@@ -110,14 +109,14 @@ _umount(PyObject *self, PyObject *args) {
 
 #define UMOUNT2_DOC  ".. py:function:: umount2(target, flags)\n"\
                     "\n"\
-                    "unmount filesystem but allows additional `flags` controlling the behavior of the operation\n"\
+                    "unmount filesystem，但允许使用额外 `flags` 控制操作行为\n"\
                     "\n"\
-                    ":param str target: the (topmost) filesystem this directory is mounted on will be removed\n"\
-                    ":param int flags: control the behavior of the operation. You can combine multiple flags\n"\
-                    "                  using ``|``. For the workshop you are most likely to use\n"\
+                    ":param str target: 该目录所在的（最顶层）filesystem 会被移除\n"\
+                    ":param int flags: 控制操作行为。可以使用 ``|`` 组合多个 flags。\n"\
+                    "                  在工作坊中，你最可能使用\n"\
                     "                  ``linux.MNT_DETACH``\n"\
                     ":return: None\n"\
-                    ":raises RuntimeError: if umount2 fails\n"\
+                    ":raises RuntimeError: umount2 失败时抛出\n"\
                     "\n"
 
 static PyObject *
@@ -140,20 +139,20 @@ _umount2(PyObject *self, PyObject *args) {
 
 #define UNSHARE_DOC ".. py:function:: unshare(flags)\n"\
                     "\n"\
-                    "disassociate parts of the process execution context\n"\
+                    "解除 process execution context 中部分内容的关联\n"\
                     "\n"\
-                    ":param int flags: which parts of the execution context should be unshared. You can\n"\
-                    "                  combine multiple flags using ``|``. See below for flags you might want\n"\
-                    "                  to use in this workshop\n"\
+                    ":param int flags: execution context 中哪些部分需要 unshare。你可以\n"\
+                    "                  使用 ``|`` 组合多个 flags。下面列出了你在\n"\
+                    "                  工作坊中可能会用到的 flags\n"\
                     ":return: None\n"\
-                    ":raises RuntimeError: if unshare fails\n"\
+                    ":raises RuntimeError: unshare 失败时抛出\n"\
                     "\n"\
-                    "Useful flags:\n"\
+                    "常用 flags：\n"\
                     "\n"\
-                    "* ``linux.CLONE_NEWNS`` - Unshare the mount namespace\n"\
-                    "* ``linux.CLONE_NEWUTS`` - Unshare the UTS namespace (hostname, domainname, etc)\n"\
-                    "* ``linux.CLONE_NEWNET`` - Unshare the network namespace\n"\
-                    "* ``linux.CLONE_NEWPID`` - Unshare the PID namespace\n"\
+                    "* ``linux.CLONE_NEWNS`` - Unshare mount namespace\n"\
+                    "* ``linux.CLONE_NEWUTS`` - Unshare UTS namespace（hostname、domainname 等）\n"\
+                    "* ``linux.CLONE_NEWNET`` - Unshare network namespace\n"\
+                    "* ``linux.CLONE_NEWPID`` - Unshare PID namespace\n"\
 
 static PyObject *
 _unshare(PyObject *self, PyObject *args) {
@@ -173,14 +172,14 @@ _unshare(PyObject *self, PyObject *args) {
 
 #define SETNS_DOC   ".. py:function:: setns(fd, nstype)\n"\
                     "\n"\
-                    "reassociate process with a namespace\n"\
+                    "把 process 重新关联到某个 namespace\n"\
                     "\n"\
-                    ":param int fd: file descriptor referring to a namespace to associate with\n"\
-                    ":param int nstype: one of the following: ``0`` (Allow any type of namespace to be joined),\n"\
-                    "                   ``CLONE_NEWIPC`` (join IPC namespace), ``CLONE_NEWNET`` (join network \n"\
-                    "                   namespace), or ``CLONE_NEWUTS`` (join UTS namespace)\n"\
+                    ":param int fd: 指向要关联 namespace 的 file descriptor\n"\
+                    ":param int nstype: 下列值之一：``0``（允许加入任意类型的 namespace）、\n"\
+                    "                   ``CLONE_NEWIPC``（加入 IPC namespace）、``CLONE_NEWNET``（加入 network\n"\
+                    "                   namespace），或 ``CLONE_NEWUTS``（加入 UTS namespace）\n"\
                     ":return: None\n"\
-                    ":raises RuntimeError: if setns fails\n"\
+                    ":raises RuntimeError: setns 失败时抛出\n"\
                     "\n"\
 
 static PyObject *
@@ -219,22 +218,22 @@ static int clone_callback(void *args) {
 
 #define CLONE_DOC   ".. py:function:: clone(callback, flags, callback_args)\n"\
                     "\n"\
-                    "create a child process\n"\
+                    "创建 child process\n"\
                     "\n"\
-                    ":param Callable callback: python function to be executed by the forked child\n"\
-                    ":param int flags: combination (using ``|``) of flags specifying what should be shared\n"\
-                    "                  between the calling process and the child process. See below.\n"\
-                    ":param tuple callback_args: tuple of arguments for the callback function\n"\
-                    ":return: On success, the thread ID of the child process\n"\
-                    ":raises RuntimeError: if clone fails\n"\
+                    ":param Callable callback: 由 fork 出来的 child 执行的 Python function\n"\
+                    ":param int flags: flags 的组合（使用 ``|``），指定 calling process 和 child process\n"\
+                    "                  之间应共享什么。见下文。\n"\
+                    ":param tuple callback_args: callback function 的参数 tuple\n"\
+                    ":return: 成功时返回 child process 的 thread ID\n"\
+                    ":raises RuntimeError: clone 失败时抛出\n"\
                     "\n"\
                     "\n"\
-                    "Useful flags:\n"\
+                    "常用 flags：\n"\
                     "\n"\
-                    "* ``linux.CLONE_NEWNS`` - Unshare the mount namespace\n"\
-                    "* ``linux.CLONE_NEWUTS`` - Unshare the UTS namespace (hostname, domainname, etc)\n"\
-                    "* ``linux.CLONE_NEWNET`` - Unshare the network namespace\n"\
-                    "* ``linux.CLONE_NEWPID`` - Unshare the PID namespace\n"\
+                    "* ``linux.CLONE_NEWNS`` - Unshare mount namespace\n"\
+                    "* ``linux.CLONE_NEWUTS`` - Unshare UTS namespace（hostname、domainname 等）\n"\
+                    "* ``linux.CLONE_NEWNET`` - Unshare network namespace\n"\
+                    "* ``linux.CLONE_NEWPID`` - Unshare PID namespace\n"\
 
 static PyObject *
 _clone(PyObject *self, PyObject *args) {
@@ -267,11 +266,11 @@ _clone(PyObject *self, PyObject *args) {
 
 #define SETHOSTNAME_DOC ".. py:function:: sethostname(hostname)\n"\
                         "\n"\
-                        "set the system hostname\n"\
+                        "设置 system hostname\n"\
                         "\n"\
-                        ":param str hostname: new hostname value\n"\
+                        ":param str hostname: 新的 hostname 值\n"\
                         ":return: None\n"\
-                        ":raises RuntimeError: if sethostname fails\n"\
+                        ":raises RuntimeError: sethostname 失败时抛出\n"\
                         "\n"\
 
 static PyObject *
@@ -316,7 +315,7 @@ PyInit_linux(void)
 	PyObject *module = PyModule_Create(&linuxmodule);
 
 
-	// clone constants
+	// clone 常量
 	PyModule_AddIntConstant(module, "CLONE_NEWNS", CLONE_NEWNS);     // mount namespace
 	PyModule_AddIntConstant(module, "CLONE_NEWUTS", CLONE_NEWUTS);   // UTS (hostname) namespace
 	PyModule_AddIntConstant(module, "CLONE_NEWPID", CLONE_NEWPID);   // PID namespace
@@ -325,7 +324,7 @@ PyInit_linux(void)
 	PyModule_AddIntConstant(module, "CLONE_NEWNET", CLONE_NEWNET);   // network namespace
 	PyModule_AddIntConstant(module, "CLONE_THREAD", CLONE_THREAD);
 
-	// mount constants
+	// mount 常量
 	PyModule_AddIntConstant(module, "MS_RDONLY", MS_RDONLY);               /* Mount read-only.  */
 	PyModule_AddIntConstant(module, "MS_NOSUID", MS_NOSUID);               /* Ignore suid and sgid bits.  */
 	PyModule_AddIntConstant(module, "MS_NODEV", MS_NODEV);                 /* Disallow access to device special files.  */

@@ -1,31 +1,31 @@
 # Level 06: PID namespace
 
-The PID namespace is a little different from other namespaces: `unshare()` doesn't move the current process to a new namespace, instead only its future children will be in the new PID namespace.
-We have 2 options:
- 1. Use `unshare()` before we fork
- 1. Use `clone()` instead of `fork()` and pass the `CLONE_NEWPID` flag
+PID namespace 和其他 namespaces 略有不同：`unshare()` 不会把当前 process 移动到新的 namespace，而是只有它未来的 children 会进入新的 PID namespace。
+我们有 2 个选择：
+ 1. 在 fork 之前使用 `unshare()`
+ 1. 使用 `clone()` 代替 `fork()`，并传入 `CLONE_NEWPID` flag
 
-Our version of `clone()` that is exposed by the `linux` module mirrors the `libc` API (because it's simpler):
+`linux` 模块暴露的 `clone()` 版本模仿了 `libc` API（因为这样更简单）：
 ```python
 linux.clone(python_callable, flags, callable_args_tuple) # --> returns pid of new process
 ```
 
-## Exercises
-- Try using the PID namespace without the `/proc` mount or mount binding the original `/proc` mount. How do tools like `ps` behave in this case?
-- Try `kill -9 $$` from within the container with and without PID namespace ($$ is evaluated to the current PID). Is there a difference? why?
-- Try generating zombies within the container.
+## 练习
+- 尝试在没有 `/proc` mount，或 bind mount 原始 `/proc` mount 的情况下使用 PID namespace。此时 `ps` 之类的工具表现如何？
+- 分别在有 PID namespace 和没有 PID namespace 的 container 内尝试 `kill -9 $$`（$$ 会求值为当前 PID）。两者有区别吗？为什么？
+- 尝试在 container 内生成 zombies。
 
-## Relevant Documentation
+## 相关文档
 
 - [man 7 pid_namespaces](http://man7.org/linux/man-pages/man7/pid_namespaces.7.html)
 - [Namespaces in operation part 3](https://lwn.net/Articles/531419/)
 
-## How to check your work
+## 如何检查你的成果
 
-Various process listing commands and the */proc* filesystem should show only container processes:
+各种 process listing 命令和 */proc* filesystem 应该只显示 container processes：
 ```
 $ sudo python rd.py run -i ubuntu /bin/bash
-Created a new root fs for our container: /workshop/containers/a4725e53-b164-4b60-ab6f-8ee527258f71/rootfs
+为 container 创建了新的 root fs：/workshop/containers/a4725e53-b164-4b60-ab6f-8ee527258f71/rootfs
 root@a4725e53-b164-4b60-ab6f-8ee527258f71:/# ps
   PID TTY          TIME CMD
     1 pts/0    00:00:00 bash

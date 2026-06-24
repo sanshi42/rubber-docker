@@ -1,32 +1,32 @@
-# level 04: overlay CoW filesystem
+# Level 04：overlay CoW filesystem
 
-So far, unpacking the image every time was slow and we want fast startup times for our containers.
-Also, it would be nice if every container won't take so much space (~ 180MB in ubuntu minimal's case).
+到目前为止，每次都解压 image 很慢，而我们希望 containers 可以快速启动。
+另外，如果每个 container 不占用这么多空间也会更好（以 ubuntu minimal 为例，大约 180MB）。
 
-In this level, we will add overlayfs.
-A secondary win is that now we can make `pivot_root()` work since our new root will be a mountpoint!
+在这个 level 中，我们会添加 overlayfs。
+额外的好处是：因为新的 root 会成为 mountpoint，现在可以让 `pivot_root()` 工作了！
 
-What we want to do is extract the image to an *image_root* directory (if it's not extracted already), and then create the following:
-- a *container_dir* with a mount directory for overlayfs
-- a directory for the writable branch (*upperdir*)
-- a directory for the *workdir*
+我们要做的是把 image 解压到 *image_root* 目录（如果尚未解压），然后创建以下内容：
+- 一个 *container_dir*，其中包含 overlayfs 的 mount 目录
+- 一个 writable branch 目录（*upperdir*）
+- 一个 *workdir* 目录
 
-## Exercises
+## 练习
 
-After implementing this step, try a few things to see how overlayfs behaves:
-- write a file using `dd` inside the container and see if you can fill the host drive.
-- write a large file (say 1GB) to the image directory, then open it for (non-truncating) writing in the container, perhaps using this python code: `open('big_file', 'r+')`. How much time does the open operation take? why?
-- Do some file operations (write files, move files, delete files) in the container, then have a look at the `upperdir` (using `ls -la`).
+实现这一步之后，尝试几件事来观察 overlayfs 的行为：
+- 在 container 中使用 `dd` 写入一个文件，看看是否能填满 host drive。
+- 往 image 目录写入一个大文件（比如 1GB），然后在 container 中以非截断写入方式打开它，可以试试这段 Python 代码：`open('big_file', 'r+')`。open 操作耗时多久？为什么？
+- 在 container 中做一些文件操作（写文件、移动文件、删除文件），然后查看 `upperdir`（使用 `ls -la`）。
 
-## Relevant Documentation
+## 相关文档
 
 - [OverlayFS - Kernel archives](https://www.kernel.org/doc/Documentation/filesystems/overlayfs.txt)
 
-## How to check your work
+## 如何检查你的成果
 
 ```
 $ time sudo python rd.py run -i ubuntu /bin/bash -- -c true
-Created a new root fs for our container: /workshop/containers/7a3393a1-df94-4c44-a935-700ec52c2607/rootfs
+为 container 创建了新的 root fs：/workshop/containers/7a3393a1-df94-4c44-a935-700ec52c2607/rootfs
 11191 exited with status 0
 
 real	0m3.475s
@@ -34,11 +34,11 @@ user	0m1.492s
 sys	0m1.260s
 
 $ time sudo python rd.py run -i ubuntu /bin/bash -- -c true
-Created a new root fs for our container: /workshop/containers/98282744-82bd-4c70-bbf9-028e8c92f995/rootfs
+为 container 创建了新的 root fs：/workshop/containers/98282744-82bd-4c70-bbf9-028e8c92f995/rootfs
 11196 exited with status 0
 
 real	0m0.162s
 user	0m0.088s
 sys	0m0.032s
 ```
-Observe that second launch of a container using the same image takes almost no time, because we don't need to extract the image again.
+注意，使用同一个 image 第二次启动 container 几乎不花时间，因为我们不需要再次解压 image。

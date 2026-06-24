@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
-"""Docker From Scratch Workshop - Level 2: Adding mount namespace.
+"""从零实现 Docker 工作坊 - Level 2：添加 mount namespace。
 
-Goal: Separate our mount table from the other processes.
+目标：把我们的 mount table 和其他 processes 分开。
 
-Usage:
-    running:
+用法：
+    运行：
         rd.py run -i ubuntu /bin/sh
-    will:
-        - fork a new chrooted process in a new mount namespace
+    会：
+        - 在新的 mount namespace 中 fork 一个新的 chrooted process
 """
 
 
@@ -33,13 +33,13 @@ def create_container_root(image_name, image_dir, container_id, container_dir):
     image_path = _get_image_path(image_name, image_dir)
     container_root = _get_container_path(container_id, container_dir, 'rootfs')
 
-    assert os.path.exists(image_path), "unable to locate image %s" % image_name
+    assert os.path.exists(image_path), "无法找到 image %s" % image_name
 
     if not os.path.exists(container_root):
         os.makedirs(container_root)
 
     with tarfile.open(image_path) as t:
-        # Fun fact: tar files may contain *nix devices! *facepalm*
+        # 冷知识：tar files 里可能包含 *nix devices！*facepalm*
         members = [m for m in t.getmembers()
                    if m.type not in (tarfile.CHRTYPE, tarfile.BLKTYPE)]
         t.extractall(container_root, members=members)
@@ -55,25 +55,24 @@ def cli():
 def contain(command, image_name, image_dir, container_id, container_dir):
     new_root = create_container_root(
         image_name, image_dir, container_id, container_dir)
-    print('Created a new root fs for our container: {}'.format(new_root))
+    print('为 container 创建了新的 root fs：{}'.format(new_root))
 
-    # TODO: time to say goodbye to the old mount namespace,
-    #       see "man 2 unshare" to get some help
-    #   HINT 1: there is no os.unshare(), time to use the linux module we made
-    #           just for you!
-    #   HINT 2: the linux module includes both functions and constants!
+    # TODO: 是时候告别旧的 mount namespace 了，
+    #       查看 "man 2 unshare" 获取帮助
+    #   提示 1：没有 os.unshare()，该使用我们专门为你准备的 linux 模块了！
+    #   提示 2：linux 模块同时包含函数和常量！
     #           e.g. linux.CLONE_NEWNS
 
-    # TODO: remember shared subtrees?
+    # TODO: 还记得 shared subtrees 吗？
     # (https://www.kernel.org/doc/Documentation/filesystems/sharedsubtree.txt)
-    # Make / a private mount to avoid littering our host mount table.
+    # 把 / 设为 private mount，避免污染 host mount table。
 
-    # Create mounts (/proc, /sys, /dev) under new_root
+    # 在 new_root 下创建 mounts（/proc、/sys、/dev）
     linux.mount('proc', os.path.join(new_root, 'proc'), 'proc', 0, '')
     linux.mount('sysfs', os.path.join(new_root, 'sys'), 'sysfs', 0, '')
     linux.mount('tmpfs', os.path.join(new_root, 'dev'), 'tmpfs',
                 linux.MS_NOSUID | linux.MS_STRICTATIME, 'mode=755')
-    # Add some basic devices
+    # 添加一些基础 devices
     devpts_path = os.path.join(new_root, 'dev', 'pts')
     if not os.path.exists(devpts_path):
         os.makedirs(devpts_path)
@@ -81,7 +80,7 @@ def contain(command, image_name, image_dir, container_id, container_dir):
     for i, dev in enumerate(['stdin', 'stdout', 'stderr']):
         os.symlink('/proc/self/fd/%d' % i, os.path.join(new_root, 'dev', dev))
 
-    # TODO: add more devices (e.g. null, zero, random, urandom) using os.mknod.
+    # TODO: 使用 os.mknod 添加更多 devices（例如 null、zero、random、urandom）。
 
     os.chroot(new_root)
 
@@ -91,10 +90,10 @@ def contain(command, image_name, image_dir, container_id, container_dir):
 
 
 @cli.command(context_settings=dict(ignore_unknown_options=True,))
-@click.option('--image-name', '-i', help='Image name', default='ubuntu')
-@click.option('--image-dir', help='Images directory',
+@click.option('--image-name', '-i', help='image 名称', default='ubuntu')
+@click.option('--image-dir', help='images 目录',
               default='/workshop/images')
-@click.option('--container-dir', help='Containers directory',
+@click.option('--container-dir', help='containers 目录',
               default='/workshop/containers')
 @click.argument('Command', required=True, nargs=-1)
 def run(image_name, image_dir, container_dir, command):
@@ -102,15 +101,15 @@ def run(image_name, image_dir, container_dir, command):
 
     pid = os.fork()
     if pid == 0:
-        # This is the child, we'll try to do some containment here
+        # 这里是 child，我们会尝试在这里做一些 containment
         try:
             contain(command, image_name, image_dir, container_id, container_dir)
         except Exception:
             traceback.print_exc()
-            os._exit(1)  # something went wrong in contain()
+            os._exit(1)  # contain() 中出了问题
 
-    # This is the parent, pid contains the PID of the forked process
-    # wait for the forked child, fetch the exit status
+    # 这里是 parent，pid 包含 fork 出来的 process 的 PID
+    # 等待 fork 出来的 child，并获取 exit status
     _, status = os.waitpid(pid, 0)
     print('{} exited with status {}'.format(pid, status))
 

@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
-"""Docker From Scratch Workshop - Level 0: Starting a new process.
+"""从零实现 Docker 工作坊 - Level 0：启动一个新 process。
 
-Goal: We want to start a new linux process using the fork & exec model.
+目标：使用 fork 与 exec 模型启动一个新的 Linux process。
 
-Note: At this level we don't care about containment yet.
+注意：在这个 level 中，我们暂时不关心 containment。
 
-Usage:
-    running:
+用法：
+    运行：
         rd.py run /bin/sh
-    will:
-        - fork a new process which will exec '/bin/sh'
-        - while the parent waits for it to finish
+    会：
+        - fork 一个新的 process，并让它 exec '/bin/sh'
+        - 同时 parent 等待它结束
 """
 
 
@@ -26,30 +26,30 @@ def cli():
 
 
 def contain(command):
-    # TODO: exec command, note the difference between the exec flavours
+    # TODO: 执行 exec command，注意不同 exec 变体之间的区别
     #       https://docs.python.org/2/library/os.html#os.execv
-    # NOTE: command is an array (the first element is path/file, and the entire
-    #       array is exec's args)
+    # 注意：command 是一个数组（第一个元素是 path/file，整个数组
+    #       都会作为 exec 的 args）
 
-    os._exit(0)  # TODO: remove this after adding exec
+    os._exit(0)  # TODO: 添加 exec 后删除这一行
 
 
 @cli.command(context_settings=dict(ignore_unknown_options=True,))
 @click.argument('Command', required=True, nargs=-1)
 def run(command):
-    # TODO: replace this with fork()
+    # TODO: 用 fork() 替换这里
     #       (https://docs.python.org/2/library/os.html#os.fork)
     pid = 0
     if pid == 0:
-        # This is the child, we'll try to do some containment here
+        # 这里是 child，我们会尝试在这里做一些 containment
         try:
             contain(command)
         except Exception:
             traceback.print_exc()
-            os._exit(1)  # something went wrong in contain()
+            os._exit(1)  # contain() 中出了问题
 
-    # This is the parent, pid contains the PID of the forked process
-    # wait for the forked child and fetch the exit status
+    # 这里是 parent，pid 包含 fork 出来的 process 的 PID
+    # 等待 fork 出来的 child，并获取 exit status
     _, status = os.waitpid(pid, 0)
     print('{} exited with status {}'.format(pid, status))
 

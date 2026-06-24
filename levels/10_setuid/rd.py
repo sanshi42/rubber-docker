@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Docker From Scratch Workshop - Level 10: Exec non-root containers.
+"""从零实现 Docker 工作坊 - Level 10：exec 非 root containers。
 
-Goal: allow specifying uid and gid for the container to run as a non-root user.
+目标：允许指定 uid 和 gid，让 container 以非 root user 身份运行。
 """
 
 
@@ -28,18 +28,18 @@ def create_container_root(image_name, image_dir, container_id, container_dir):
     image_path = _get_image_path(image_name, image_dir)
     image_root = os.path.join(image_dir, image_name, 'rootfs')
 
-    assert os.path.exists(image_path), "unable to locate image %s" % image_name
+    assert os.path.exists(image_path), "无法找到 image %s" % image_name
 
     if not os.path.exists(image_root):
         os.makedirs(image_root)
         with tarfile.open(image_path) as t:
-            # Fun fact: tar files may contain *nix devices! *facepalm*
+            # 冷知识：tar files 里可能包含 *nix devices！*facepalm*
             members = [m for m in t.getmembers()
                        if m.type not in (tarfile.CHRTYPE, tarfile.BLKTYPE)]
             t.extractall(image_root, members=members)
 
-    # Create directories for copy-on-write (uppperdir), overlay workdir,
-    # and a mount point
+    # 创建 copy-on-write（uppperdir）、overlay workdir
+    # 和 mount point 所需的目录
     container_cow_rw = _get_container_path(
         container_id, container_dir, 'cow_rw')
     container_cow_workdir = _get_container_path(
@@ -50,7 +50,7 @@ def create_container_root(image_name, image_dir, container_id, container_dir):
         if not os.path.exists(d):
             os.makedirs(d)
 
-    # mount the overlay (HINT: use the MS_NODEV flag to mount)
+    # mount overlay（提示：使用 MS_NODEV flag 来 mount）
     linux.mount(
         'overlay', container_rootfs, 'overlay', linux.MS_NODEV,
         "lowerdir={image_root},upperdir={cow_rw},workdir={cow_workdir}".format(
@@ -58,7 +58,7 @@ def create_container_root(image_name, image_dir, container_id, container_dir):
             cow_rw=container_cow_rw,
             cow_workdir=container_cow_workdir))
 
-    return container_rootfs  # return the mountpoint for the overlayfs
+    return container_rootfs  # 返回 overlayfs 的 mountpoint
 
 
 @click.group()
@@ -70,7 +70,7 @@ def makedev(dev_path):
     for i, dev in enumerate(['stdin', 'stdout', 'stderr']):
         os.symlink('/proc/self/fd/%d' % i, os.path.join(dev_path, dev))
     os.symlink('/proc/self/fd', os.path.join(dev_path, 'fd'))
-    # Add extra devices
+    # 添加额外 devices
     DEVICES = {'null': (stat.S_IFCHR, 1, 3), 'zero': (stat.S_IFCHR, 1, 5),
                'random': (stat.S_IFCHR, 1, 8), 'urandom': (stat.S_IFCHR, 1, 9),
                'console': (stat.S_IFCHR, 136, 1), 'tty': (stat.S_IFCHR, 5, 0),
@@ -81,13 +81,13 @@ def makedev(dev_path):
 
 
 def _create_mounts(new_root):
-    # Create mounts (/proc, /sys, /dev) under new_root
+    # 在 new_root 下创建 mounts（/proc、/sys、/dev）
     linux.mount('proc', os.path.join(new_root, 'proc'), 'proc', 0, '')
     linux.mount('sysfs', os.path.join(new_root, 'sys'), 'sysfs', 0, '')
     linux.mount('tmpfs', os.path.join(new_root, 'dev'), 'tmpfs',
                 linux.MS_NOSUID | linux.MS_STRICTATIME, 'mode=755')
 
-    # Add some basic devices
+    # 添加一些基础 devices
     devpts_path = os.path.join(new_root, 'dev', 'pts')
     if not os.path.exists(devpts_path):
         os.makedirs(devpts_path)
@@ -101,13 +101,13 @@ def _setup_cpu_cgroup(container_id, cpu_shares):
     container_cpu_cgroup_dir = os.path.join(
         CPU_CGROUP_BASEDIR, 'rubber_docker', container_id)
 
-    # Insert the container to new cpu cgroup named 'rubber_docker/container_id'
+    # 把 container 放进名为 'rubber_docker/container_id' 的新 cpu cgroup
     if not os.path.exists(container_cpu_cgroup_dir):
         os.makedirs(container_cpu_cgroup_dir)
     tasks_file = os.path.join(container_cpu_cgroup_dir, 'tasks')
     open(tasks_file, 'w').write(str(os.getpid()))
 
-    # If (cpu_shares != 0)  => set the 'cpu.shares' in our cpu cgroup
+    # 如果 (cpu_shares != 0)，就在我们的 cpu cgroup 中设置 'cpu.shares'
     if cpu_shares:
         cpu_shares_file = os.path.join(container_cpu_cgroup_dir, 'cpu.shares')
         open(cpu_shares_file, 'w').write(str(cpu_shares))
@@ -118,7 +118,7 @@ def _setup_memory_cgroup(container_id, memory, memory_swap):
     container_mem_cgroup_dir = os.path.join(
         MEMORY_CGROUP_BASEDIR, 'rubber_docker', container_id)
 
-    # Insert the container to new memory cgroup named 'rubber_docker/container_id'
+    # 把 container 放进名为 'rubber_docker/container_id' 的新 memory cgroup
     if not os.path.exists(container_mem_cgroup_dir):
         os.makedirs(container_mem_cgroup_dir)
     tasks_file = os.path.join(container_mem_cgroup_dir, 'tasks')
@@ -139,13 +139,13 @@ def contain(command, image_name, image_dir, container_id, container_dir,
     _setup_cpu_cgroup(container_id, cpu_shares)
     _setup_memory_cgroup(container_id, memory, memory_swap)
 
-    linux.sethostname(container_id)  # change hostname to container_id
+    linux.sethostname(container_id)  # 把 hostname 改成 container_id
 
     linux.mount(None, '/', None, linux.MS_PRIVATE | linux.MS_REC, None)
 
     new_root = create_container_root(
         image_name, image_dir, container_id, container_dir)
-    print('Created a new root fs for our container: {}'.format(new_root))
+    print('为 container 创建了新的 root fs：{}'.format(new_root))
 
     _create_mounts(new_root)
 
@@ -156,45 +156,45 @@ def contain(command, image_name, image_dir, container_id, container_dir,
     os.chdir('/')
 
     linux.umount2('/old_root', linux.MNT_DETACH)  # umount old root
-    os.rmdir('/old_root')  # rmdir the old_root dir
+    os.rmdir('/old_root')  # rmdir old_root 目录
 
-    # TODO: if user is set, drop privileges using os.setuid()
-    #       (and optionally os.setgid()).
+    # TODO: 如果设置了 user，使用 os.setuid() 降低 privileges
+    #       （也可以选择使用 os.setgid()）。
 
     os.execvp(command[0], command)
 
 
 @cli.command(context_settings=dict(ignore_unknown_options=True,))
 @click.option('--memory',
-              help='Memory limit in bytes.'
-              ' Use suffixes to represent larger units (k, m, g)',
+              help='Memory limit，单位为 bytes。'
+              ' 可使用后缀表示更大的单位（k、m、g）',
               default=None)
 @click.option('--memory-swap',
-              help='A positive integer equal to memory plus swap.'
-              ' Specify -1 to enable unlimited swap.',
+              help='等于 memory 加 swap 的正整数。'
+              ' 指定 -1 可启用无限 swap。',
               default=None)
-@click.option('--cpu-shares', help='CPU shares (relative weight)', default=0)
+@click.option('--cpu-shares', help='CPU shares（相对权重）', default=0)
 @click.option('--user', help='UID (format: <uid>[:<gid>])', default='')
-@click.option('--image-name', '-i', help='Image name', default='ubuntu')
-@click.option('--image-dir', help='Images directory',
+@click.option('--image-name', '-i', help='image 名称', default='ubuntu')
+@click.option('--image-dir', help='images 目录',
               default='/workshop/images')
-@click.option('--container-dir', help='Containers directory',
+@click.option('--container-dir', help='containers 目录',
               default='/workshop/containers')
 @click.argument('Command', required=True, nargs=-1)
 def run(memory, memory_swap, cpu_shares, user, image_name, image_dir,
         container_dir, command):
     container_id = str(uuid.uuid4())
 
-    # linux.clone(callback, flags, callback_args) is modeled after the Glibc
-    # version. see: "man 2 clone"
+    # linux.clone(callback, flags, callback_args) 是仿照 Glibc
+    # 版本建模的。见："man 2 clone"
     flags = (linux.CLONE_NEWPID | linux.CLONE_NEWNS | linux.CLONE_NEWUTS |
              linux.CLONE_NEWNET)
     callback_args = (command, image_name, image_dir, container_id,
                      container_dir, cpu_shares, memory, memory_swap, user)
     pid = linux.clone(contain, flags, callback_args)
 
-    # This is the parent, pid contains the PID of the forked process
-    # Wait for the forked child, fetch the exit status
+    # 这里是 parent，pid 包含 fork 出来的 process 的 PID
+    # 等待 fork 出来的 child，并获取 exit status
     _, status = os.waitpid(pid, 0)
     print('{} exited with status {}'.format(pid, status))
 

@@ -1,23 +1,23 @@
-# Level 07: network namespace
+# Level 07：network namespace
 
-Move to a new network namespace so that the container doesn't have access to the host NICs.
-After implementing this, you can check with `ip link` or `ifconfig` that you don't see the host NICs anymore.
+移动到新的 network namespace，让 container 无法访问 host NICs。
+实现之后，可以用 `ip link` 或 `ifconfig` 检查，确认已经看不到 host NICs。
 
-Bonus: The iproute2 toolchain also allows fiddling with network namespaces.
-Have a look at the `ip netns` commands.
-To make it work with the namespaces we generate using syscalls, we need to link a file in `/var/run/netns` to the network namespace file descriptor from `/proc/<pid>/ns/`.
+Bonus：iproute2 工具链也允许操作 network namespaces。
+看看 `ip netns` 命令。
+为了让它能和我们用 syscalls 生成的 namespaces 配合工作，需要把 `/var/run/netns` 中的某个文件链接到来自 `/proc/<pid>/ns/` 的 network namespace file descriptor。
 
-## Relevant Documentation
+## 相关文档
 
 - [Namespaces in operation - network namespace](https://lwn.net/Articles/580893/)
 - [man ip-netns](http://man7.org/linux/man-pages/man8/ip-netns.8.html)
 
-## How to check your work
-Run the container and use `ip link` or `ifconfig` to browse the available NICs.
-You should see only `lo` (if using `ip link`) or no NICs (if using `ifconfig`).
+## 如何检查你的成果
+运行 container，并使用 `ip link` 或 `ifconfig` 查看可用 NICs。
+你应该只看到 `lo`（如果使用 `ip link`），或者看不到任何 NICs（如果使用 `ifconfig`）。
 ```
 $ sudo python rd.py run -i ubuntu /bin/bash
-Created a new root fs for our container: /workshop/containers/9feb3d2d-725b-4c36-8c4d-0c586766f6f6/rootfs
+为 container 创建了新的 root fs：/workshop/containers/9feb3d2d-725b-4c36-8c4d-0c586766f6f6/rootfs
 root@9feb3d2d-725b-4c36-8c4d-0c586766f6f6:/# ip a
 1: lo: <LOOPBACK> mtu 65536 qdisc noop state DOWN group default
     link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
@@ -25,9 +25,9 @@ root@9feb3d2d-725b-4c36-8c4d-0c586766f6f6:/# ifconfig
 ```
 
 ## Bonus round
-The `ip netns` command allows you to manipulate network namespaces, e.g. to create a `veth` pair and assign one of the pair to your new network namespace.
-The `veth` pair is somewhat like a patch cable - packets sent on one `veth` NIC will appear on the other member of the pair.
-You can use the `veth` to connect your container to a bridge/vswitch (like Docker does) or routing table.
-`ip netns` uses the `netlink` kernel API and you can use it directly with the `pyroute2` module.
-Alternatively, it may be easier to start by running `ip netns` commands.
-Note that `ip netns` requires a network namespace file descriptor to reside in `/var/run/netns`, you can symlink `/proc/<pid>/ns/net` to get `ip netns` to work.
+`ip netns` 命令允许你操控 network namespaces，例如创建一对 `veth`，并把其中一端分配给新的 network namespace。
+`veth` pair 有点像一根 patch cable：发送到一个 `veth` NIC 的 packets 会出现在这对设备的另一端。
+你可以使用 `veth` 把 container 连接到 bridge/vswitch（就像 Docker 做的那样）或 routing table。
+`ip netns` 使用 `netlink` kernel API，你也可以直接通过 `pyroute2` 模块使用它。
+另一种方式是先从运行 `ip netns` 命令开始，这可能更简单。
+注意，`ip netns` 要求 network namespace file descriptor 位于 `/var/run/netns`，你可以 symlink `/proc/<pid>/ns/net` 来让 `ip netns` 工作。

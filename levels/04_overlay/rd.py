@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""Docker From Scratch Workshop - Level 4: Add overlay FS.
+"""从零实现 Docker 工作坊 - Level 4：添加 overlay FS。
 
-Goal: Instead of re-extracting the image, use it as a read-only layer
-      (lowerdir), and create a copy-on-write layer for changes (upperdir).
+目标：不再重复解压 image，而是把它用作 read-only layer（lowerdir），
+      并为变更创建 copy-on-write layer（upperdir）。
 
-HINT: Don't forget that overlay fs also requires a workdir.
+提示：别忘了 overlay fs 还需要一个 workdir。
 
-Read more on overlay FS here:
+在这里阅读更多 overlay FS 信息：
 https://www.kernel.org/doc/Documentation/filesystems/overlayfs.txt
 """
 
@@ -32,27 +32,27 @@ def _get_container_path(container_id, container_dir, *subdir_names):
 
 def create_container_root(image_name, image_dir, container_id, container_dir):
     image_path = _get_image_path(image_name, image_dir)
-    assert os.path.exists(image_path), "unable to locate image %s" % image_name
+    assert os.path.exists(image_path), "无法找到 image %s" % image_name
 
-    # TODO: Instead of creating the container_root and extracting to it,
-    #       create an images_root.
-    # keep only one rootfs per image and re-use it
+    # TODO: 不要创建 container_root 并解压到里面，
+    #       而是创建 images_root。
+    # 每个 image 只保留一个 rootfs，并复用它
     container_root = _get_container_path(container_id, container_dir, 'rootfs')
 
     if not os.path.exists(container_root):
         os.makedirs(container_root)
         with tarfile.open(image_path) as t:
-            # Fun fact: tar files may contain *nix devices! *facepalm*
+            # 冷知识：tar files 里可能包含 *nix devices！*facepalm*
             members = [m for m in t.getmembers()
                        if m.type not in (tarfile.CHRTYPE, tarfile.BLKTYPE)]
             t.extractall(container_root, members=members)
 
-    # TODO: create directories for copy-on-write (uppperdir), overlay workdir,
-    #       and a mount point
+    # TODO: 创建 copy-on-write（uppperdir）、overlay workdir
+    #       和 mount point 所需的目录
 
-    # TODO: mount the overlay (HINT: use the MS_NODEV flag to mount)
+    # TODO: 执行 overlay mount（提示：使用 MS_NODEV flag 来 mount）
 
-    return container_root  # return the mountpoint for the mounted overlayfs
+    return container_root  # 返回已 mount overlayfs 的 mountpoint
 
 
 @click.group()
@@ -64,7 +64,7 @@ def makedev(dev_path):
     for i, dev in enumerate(['stdin', 'stdout', 'stderr']):
         os.symlink('/proc/self/fd/%d' % i, os.path.join(dev_path, dev))
     os.symlink('/proc/self/fd', os.path.join(dev_path, 'fd'))
-    # Add extra devices
+    # 添加额外 devices
     DEVICES = {'null': (stat.S_IFCHR, 1, 3), 'zero': (stat.S_IFCHR, 1, 5),
                'random': (stat.S_IFCHR, 1, 8), 'urandom': (stat.S_IFCHR, 1, 9),
                'console': (stat.S_IFCHR, 136, 1), 'tty': (stat.S_IFCHR, 5, 0),
@@ -75,13 +75,13 @@ def makedev(dev_path):
 
 
 def _create_mounts(new_root):
-    # Create mounts (/proc, /sys, /dev) under new_root
+    # 在 new_root 下创建 mounts（/proc、/sys、/dev）
     linux.mount('proc', os.path.join(new_root, 'proc'), 'proc', 0, '')
     linux.mount('sysfs', os.path.join(new_root, 'sys'), 'sysfs', 0, '')
     linux.mount('tmpfs', os.path.join(new_root, 'dev'), 'tmpfs',
                 linux.MS_NOSUID | linux.MS_STRICTATIME, 'mode=755')
 
-    # Add some basic devices
+    # 添加一些基础 devices
     devpts_path = os.path.join(new_root, 'dev', 'pts')
     if not os.path.exists(devpts_path):
         os.makedirs(devpts_path)
@@ -91,13 +91,13 @@ def _create_mounts(new_root):
 
 
 def contain(command, image_name, image_dir, container_id, container_dir):
-    linux.unshare(linux.CLONE_NEWNS)  # create a new mount namespace
+    linux.unshare(linux.CLONE_NEWNS)  # 创建新的 mount namespace
 
     linux.mount(None, '/', None, linux.MS_PRIVATE | linux.MS_REC, None)
 
     new_root = create_container_root(
         image_name, image_dir, container_id, container_dir)
-    print('Created a new root fs for our container: {}'.format(new_root))
+    print('为 container 创建了新的 root fs：{}'.format(new_root))
 
     _create_mounts(new_root)
 
@@ -108,15 +108,15 @@ def contain(command, image_name, image_dir, container_id, container_dir):
     os.chdir('/')
 
     linux.umount2('/old_root', linux.MNT_DETACH)  # umount old root
-    os.rmdir('/old_root')  # rmdir the old_root dir
+    os.rmdir('/old_root')  # rmdir old_root 目录
     os.execvp(command[0], command)
 
 
 @cli.command(context_settings=dict(ignore_unknown_options=True,))
-@click.option('--image-name', '-i', help='Image name', default='ubuntu')
-@click.option('--image-dir', help='Images directory',
+@click.option('--image-name', '-i', help='image 名称', default='ubuntu')
+@click.option('--image-dir', help='images 目录',
               default='/workshop/images')
-@click.option('--container-dir', help='Containers directory',
+@click.option('--container-dir', help='containers 目录',
               default='/workshop/containers')
 @click.argument('Command', required=True, nargs=-1)
 def run(image_name, image_dir, container_dir, command):
@@ -124,16 +124,16 @@ def run(image_name, image_dir, container_dir, command):
 
     pid = os.fork()
     if pid == 0:
-        # This is the child, we'll try to do some containment here
+        # 这里是 child，我们会尝试在这里做一些 containment
         try:
             contain(command, image_name, image_dir, container_id,
                     container_dir)
         except Exception:
             traceback.print_exc()
-            os._exit(1)  # something went wrong in contain()
+            os._exit(1)  # contain() 中出了问题
 
-    # This is the parent, pid contains the PID of the forked process
-    # wait for the forked child, fetch the exit status
+    # 这里是 parent，pid 包含 fork 出来的 process 的 PID
+    # 等待 fork 出来的 child，并获取 exit status
     _, status = os.waitpid(pid, 0)
     print('{} exited with status {}'.format(pid, status))
 

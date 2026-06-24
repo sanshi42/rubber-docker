@@ -1,7 +1,7 @@
-# rubber-docker docs
+# rubber-docker 文档
 
-This folder contains the preparatory and background docs for the workshop.
+这个目录包含工作坊的预备材料和背景文档。
 
-Before taking the workshop, please read through the preparatory docs starting with [prep.md](prep.md)
+参加工作坊之前，请从 [prep.md](prep.md) 开始阅读预备文档。
 
-During the workshop, please use the [linux module documentation](https://rawgit.com/Fewbytes/rubber-docker/master/docs/linux/index.html) for additional syscall wrappers
+工作坊过程中，如果需要额外的 syscall wrappers，请参考 [linux 模块文档](https://rawgit.com/Fewbytes/rubber-docker/master/docs/linux/index.html)。

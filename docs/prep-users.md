@@ -1,17 +1,17 @@
 # Users
 
-From the kernel’s PoV, a user is an `int` parameter in various structs
-A process (*task_struct*) has several uid fields: *ruid*, *suid*, *euid*, *fsuid*
+从 kernel 的视角看，user 只是多个 structs 里的一个 `int` 参数。
+一个 process（*task_struct*）有多个 uid 字段：*ruid*、*suid*、*euid*、*fsuid*。
 
-There is no need to “add” or "create" new users - since a "user" is just an int parameter, we can just a assign any value to it. There are only two types of users:
-- uid 0, aka _root_
-- everyone else
+不需要“添加”或“创建”新 users；因为 “user” 只是一个 int 参数，我们可以直接给它赋任意值。user 只有两类：
+- uid 0，也就是 _root_
+- 其他所有人
 
-More on that in the _capabilities_ section.
+更多内容会在 _capabilities_ 章节说明。
 
-User names are a userspace feature of which the kernel is completely oblivious. Largely implemented in `libnss` and `glibc`, user names are a mapping from a human friendly names to uid numbers, managed in `/etc/passwd` and `/etc/shadow`.
-Commands like `useradd` manipulate `/etc/passwd`, `/etc/shadow`.
-If there's no matching entry for a uid in `/etc/passwd`, everything still works except we won't have the mapping to human friendly names. E.g., try the following:
+用户名是 userspace 功能，kernel 完全不知道它们的存在。用户名主要由 `libnss` 和 `glibc` 实现，是从人类友好名称到 uid 数字的映射，由 `/etc/passwd` 和 `/etc/shadow` 管理。
+像 `useradd` 这样的命令会操作 `/etc/passwd`、`/etc/shadow`。
+如果某个 uid 在 `/etc/passwd` 中没有匹配项，除了无法映射到人类友好的名字之外，一切仍然可以工作。例如试试：
 
 ```
 touch /tmp/test
@@ -20,8 +20,8 @@ ls -lh /tmp/test
 ```
 
 ## User permissions
-The kernel uses uid numbers (and gid) to decide if a process is permitted to perform certain actions. For example, if a process is trying to `open()` a file, the *fsuid* of the process is compared with the owner uid of the file (and it's permissions mask).
+kernel 使用 uid 数字（以及 gid）决定某个 process 是否允许执行特定动作。例如，如果一个 process 试图 `open()` 一个文件，kernel 会把该 process 的 *fsuid* 和文件 owner uid（以及它的 permissions mask）进行比较。
 
-But how does a process change it's uid fields? When a process is cloned it inherits its uid fields from the parent and can then call `setuid()` or similar to change the uid. A process can only change its *ruid* (real uid) if it is currently uid 0 (root).
+但 process 如何修改自己的 uid 字段？当 process 被 cloned 时，它会继承 parent 的 uid 字段，随后可以调用 `setuid()` 或类似接口修改 uid。只有当前 uid 为 0（root）的 process 才能修改自己的 *ruid*（real uid）。
 
-No identity checks (NFS i’m looking at you)
+没有 identity checks（NFS，说的就是你）。
